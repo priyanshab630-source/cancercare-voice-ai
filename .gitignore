@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# deps / build
+node_modules/
+.vercel
+.netlify
+dist/
+build/
+
+# env — never commit secrets
+.env
+.env.*
+!.env.example
