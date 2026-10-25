@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CancerCare Voice AI — Demo</title>
+<link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+<div class="demobanner">DEMO DATA — NOT REAL PATIENTS · Educational prototype · Not a medical device · Not clinically validated</div>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="loginwrap">
+    <div class="loginleft">
+      <div class="brand" style="margin-bottom:1rem">
+        <span class="logo" style="background:rgba(255,255,255,.2)">&#9829;</span>
+        <span>CancerCare Voice AI</span>
+      </div>
+      <h1>Cancer support in your own language.</h1>
+      <p>An AI voice companion for patients, caregivers and clinicians — explaining reports, tracking prescribed medicines, and helping you prepare the right questions for your care team.</p>
+      <ul class="featurelist">
+        <li>Voice conversations in Hindi, English, Hinglish, Tamil, Punjabi, Urdu &amp; Gujarati</li>
+        <li>Cancer-type-specific education for 39 categories</li>
+        <li>Source-grounded medication education</li>
+        <li>Interactive body map &amp; printable patient reports</li>
+        <li>Emergency escalation &amp; clinician review workflows</li>
+      </ul>
+      <p class="small" style="margin-top:1.4rem;color:rgba(255,255,255,.75)">This prototype never records audio without your action, keeps API keys off the browser, and labels every synthetic record clearly.</p>
+    </div>
+    <div class="loginright">
+      <h2>Sign in</h2>
+      <p class="muted small">Demo mode — any password works. Choose a role to explore.</p>
+      <label>Role</label>
+      <div class="roles" id="rolePick"></div>
+      <div id="patientPickWrap" style="margin-bottom:.8rem">
+        <label>Demo patient</label>
+        <select id="loginPatient"></select>
+      </div>
+      <label>Email</label>
+      <input id="loginEmail" value="demo@cancercare.ai" />
+      <div style="height:.6rem"></div>
+      <label>Password</label>
+      <input id="loginPass" type="password" value="demo1234" />
+      <div style="height:.9rem"></div>
+      <label>Preferred language</label>
+      <select id="loginLang"></select>
+      <div style="height:1rem"></div>
+      <button class="btn-primary" style="width:100%" onclick="doLogin()">Enter CancerCare Voice AI</button>
+      <p class="tiny muted" style="margin-top:.9rem">By continuing you acknowledge this is a synthetic demo. In a real deployment, consent, encryption at rest, audit logging and role-based access control would be enforced on the server.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="topbar">
+    <button class="menubtn" onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+    <div class="brand"><span class="logo">&#9829;</span><span>CancerCare <span class="muted" style="font-weight:500">Voice AI</span></span></div>
+    <span class="spacer"></span>
+    <span class="pill pill-teal" id="connState">Demo mode</span>
+    <select id="langSel" title="Language" onchange="setLang(this.value)"></select>
+    <span class="pill" id="whoami">—</span>
+    <button class="btn-ghost btn-sm" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="shell">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+
+      <!-- Dashboard -->
+      <section class="view" id="view-dashboard">
+        <div id="dashHead"></div>
+        <div class="grid grid-2" style="margin-bottom:1rem">
+          <div class="card" style="text-align:center">
+            <div class="mic-wrap">
+              <button class="mic" id="dashMic" onclick="go('voice')">&#127908;</button>
+              <div><b>Talk to CancerCare</b><div class="muted small">Ask about reports, medicines or symptoms in your language</div></div>
+              <div class="chips" style="justify-content:center">
+                <span class="chip" onclick="quickAsk('Explain my latest report in simple language')">Explain my report</span>
+                <span class="chip" onclick="quickAsk('What are my medicines and why were they given?')">My medicines</span>
+                <span class="chip" onclick="quickAsk('What questions should I ask my oncologist?')">Ask my doctor</span>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="regStatusCard"></div>
+        </div>
+        <div class="grid grid-3" style="margin-bottom:1rem" id="dashStats"></div>
+        <div class="grid grid-2">
+          <div class="card" id="dashMeds"></div>
+          <div class="card" id="dashBody"></div>
+        </div>
+        <div style="height:1rem"></div>
+        <div class="grid grid-2">
+          <div class="card" id="dashAppt"></div>
+          <div class="card" id="dashSymp"></div>
+        </div>
+      </section>
+
+      <!-- Voice -->
+      <section class="view" id="view-voice">
+        <h2>Voice consultation</h2>
+        <p class="muted small">Speak or type. In Chrome the microphone uses the browser's speech recognition; otherwise type your question below. Nothing is recorded or sent anywhere — this demo runs fully in your browser.</p>
+        <div class="voicebox">
+          <div class="card">
+            <div class="mic-wrap">
+              <button class="mic" id="micBtn" onclick="toggleMic()">&#127908;</button>
+              <div class="statusline" id="micStatus">Tap the microphone to speak</div>
+              <div class="small muted" id="micHint"></div>
+            </div>
+            <hr>
+            <label>Type your question instead</label>
+            <div class="row" style="flex-wrap:nowrap">
+              <input id="typedAsk" placeholder="e.g. मेरी chemotherapy के बाद थकान हो रही है" onkeydown="if(event.key==='Enter')askTyped()" />
+              <button class="btn-primary" onclick="askTyped()">Send</button>
+            </div>
+            <div class="chips" id="voiceChips"></div>
+          </div>
+          <div class="card">
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <h3 style="margin:0">Transcript</h3>
+              <button class="btn-ghost btn-sm" onclick="clearSession()">Clear session</button>
+            </div>
+            <div class="transcript" id="transcript"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Registration -->
+      <section class="view" id="view-registration">
+        <h2>Patient registration</h2>
+        <p class="muted small">A conversational wizard. Each confirmed answer is saved immediately and marked as <span class="savedflag">saved</span>. Fields are never invented — unknown stays unknown.</p>
+        <div class="progress"><i id="regBar" style="width:0%"></i></div>
+        <div class="steps" id="regSteps"></div>
+        <div class="row">
+          <div class="card grow" style="flex:1 1 420px">
+            <div id="regChat" class="transcript" style="max-height:300px;background:#FDFCFA;border:1px solid var(--line);border-radius:12px;padding:.7rem"></div>
+            <hr>
+            <div class="row" style="flex-wrap:nowrap">
+              <input id="regInput" placeholder="Type your answer…" onkeydown="if(event.key==='Enter')regAnswer()" />
+              <button class="btn-primary" onclick="regAnswer()">Confirm</button>
+            </div>
+            <div class="chips" id="regChips"></div>
+          </div>
+          <div class="card grow" style="flex:1 1 320px">
+            <h3>Saved fields</h3>
+            <div id="regFields"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cancer info -->
+      <section class="view" id="view-info">
+        <h2>Cancer Information Center</h2>
+        <p class="muted small">Plain-language education for every supported cancer category, grounded in sources such as the National Cancer Institute, NHS and WHO. The assistant never replaces your treating clinician.</p>
+        <input id="infoSearch" placeholder="Search a cancer type or topic…" oninput="renderInfo()" style="max-width:420px;margin-bottom:1rem" />
+        <div class="grid grid-3" id="infoGrid"></div>
+      </section>
+
+      <!-- Body map -->
+      <section class="view" id="view-bodymap">
+        <h2>Interactive body map</h2>
+        <p class="muted small">Educational only — not diagnostic. Highlights show where a <b>documented condition</b>, a <b>patient-reported symptom</b>, a <b>treatment target</b>, or a <b>possible medication-related effect</b> may be relevant. A medicine name alone never implies organ damage.</p>
+        <div class="layertoggle" id="layerToggle"></div>
+        <div class="bodymap">
+          <div class="bodysvg">
+            <div class="row" style="justify-content:center;gap:.4rem;margin-bottom:.4rem">
+              <button class="btn-sm btn-ghost" id="viewFront" onclick="setBodyView('front')">Front</button>
+              <button class="btn-sm btn-ghost" id="viewBack" onclick="setBodyView('back')">Back</button>
+            </div>
+            <div id="svgHost"></div>
+            <div class="legend" style="margin-top:.6rem" id="bodyLegend"></div>
+          </div>
+          <div class="card" id="bodyDetail"><p class="muted">Click a highlighted region to see why it is shown, in plain language.</p></div>
+        </div>
+      </section>
+
+      <!-- Medications -->
+      <section class="view" id="view-medications">
+        <h2>Medication dashboard</h2>
+        <div class="notice info" style="margin-bottom:1rem">CancerCare explains a <b>clinician-recorded</b> prescription — its documented purpose, common side effects and monitoring. It never selects, starts, stops or changes cancer treatment, and never turns a document into a new prescription. Always confirm with your oncology team.</div>
+        <div id="medSections"></div>
+      </section>
+
+      <!-- Records -->
+      <section class="view" id="view-records">
+        <h2>Medical records</h2>
+        <p class="muted small">Upload a prescription, lab report or pathology summary. Text is extracted for your confirmation — OCR output is <b>never</b> treated as verified clinical truth.</p>
+        <div class="row">
+          <div class="card grow" style="flex:1 1 340px">
+            <h3>Upload a document</h3>
+            <input type="file" id="docFile" accept=".pdf,.png,.jpg,.jpeg,.txt" onchange="handleUpload(event)" />
+            <p class="tiny muted" style="margin-top:.6rem">Accepted: PDF, PNG, JPG, TXT. In demo mode a synthetic extraction is produced; in production this routes to secure storage + OCR + the Medical Document Agent.</p>
+            <div id="uploadOut" style="margin-top:.8rem"></div>
+          </div>
+          <div class="card grow" style="flex:1 1 340px">
+            <h3>Documents on file</h3>
+            <div id="docList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section class="view" id="view-reports">
+        <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <h2 style="margin:0">Patient report</h2>
+          <div class="no-print">
+            <button class="btn-ghost btn-sm" onclick="generateReport()">Regenerate</button>
+            <button class="btn-primary btn-sm" onclick="window.print()">Print / Save as PDF</button>
+          </div>
+        </div>
+        <div class="notice" style="margin:1rem 0">This is a <b>patient education and information summary</b> — not a diagnosis, treatment plan, or a substitute for a clinician's report. Every extracted fact keeps its source and timestamp.</div>
+        <div id="reportBody"></div>
+      </section>
+
+      <!-- Clinician -->
+      <section class="view" id="view-clinician">
+        <h2>Clinician dashboard</h2>
+        <p class="muted small">Authorized patient list, pending document verification, patient-reported symptoms, medication reconciliation and review requests. Every action is written to the audit log.</p>
+        <div class="grid grid-3" id="clinStats" style="margin-bottom:1rem"></div>
+        <div class="card" style="margin-bottom:1rem"><h3>Patients</h3><div id="clinPatients"></div></div>
+        <div class="grid grid-2">
+          <div class="card"><h3>Review requests</h3><div id="clinReviews"></div></div>
+          <div class="card"><h3>Audit log</h3><div id="clinAudit" style="max-height:320px;overflow:auto"></div></div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="view" id="view-settings">
+        <h2>Settings &amp; privacy</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Language &amp; accessibility</h3>
+            <label>Preferred language</label>
+            <select id="setLang" onchange="setLang(this.value)"></select>
+            <div style="height:.6rem"></div>
+            <label>Communication format</label>
+            <select id="setFormat"><option>Voice + text</option><option>Text only</option><option>Voice first</option></select>
+          </div>
+          <div class="card">
+            <h3>Consent</h3>
+            <div id="consentList"></div>
+          </div>
+          <div class="card">
+            <h3>Recording &amp; retention</h3>
+            <p class="small muted">Audio is never stored in this demo. Transcripts are kept only in your browser session.</p>
+            <label>Transcript retention</label>
+            <select id="setRetention"><option>Session only</option><option>7 days</option><option>30 days</option></select>
+            <div style="height:.6rem"></div>
+            <button class="btn-ghost btn-sm" onclick="clearSession()">Delete this session's transcripts</button>
+          </div>
+          <div class="card">
+            <h3>Data controls</h3>
+            <button class="btn-ghost btn-sm" onclick="exportData()">Export my data (JSON)</button>
+            <div style="height:.5rem"></div>
+            <button class="btn-ghost btn-sm" onclick="resetDemo()">Reset demo data</button>
+            <p class="tiny muted" style="margin-top:.6rem">In production: deletion requests, caregiver authorization and audit export would be server-enforced.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <button class="fab-voice" onclick="go('voice')">&#127908;</button>
+  <footer>
+    CancerCare Voice AI · Educational prototype · Synthetic data only · Not a medical device · Built with a demo-mode adapter; connect Sarvam speech APIs and a FastAPI backend for production.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
